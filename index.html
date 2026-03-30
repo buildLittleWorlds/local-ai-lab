@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Local AI Lab — Transformers.js v4 Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-hover: #222636;
+    --border: #2a2e3d;
+    --text: #e2e4eb;
+    --text-muted: #8b8fa3;
+    --accent: #f0a83c;
+    --accent-dim: rgba(240, 168, 60, 0.12);
+    --green: #5cb87a;
+    --green-dim: rgba(92, 184, 122, 0.12);
+    --red: #e05c5c;
+    --red-dim: rgba(224, 92, 92, 0.12);
+    --blue: #5c9ee0;
+    --blue-dim: rgba(92, 158, 224, 0.12);
+    --purple: #a87ce0;
+    --purple-dim: rgba(168, 124, 224, 0.12);
+    --mono: 'IBM Plex Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: 2rem 2rem 0;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .header h1 {
+    font-family: var(--serif);
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .header .subtitle {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+  .header .subtitle a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .runtime-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.75rem;
+    padding: 4px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .runtime-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+  .runtime-badge .dot.active { background: var(--green); }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    max-width: 960px;
+    margin: 1.5rem auto 0;
+    padding: 0 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 0.6rem 1.2rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── Main ── */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 3rem;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── Shared Components ── */
+  .explain {
+    font-family: var(--serif);
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+    line-height: 1.7;
+    font-style: italic;
+  }
+  .explain code {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    background: var(--surface);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  .tech-note {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 1.25rem;
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .tech-note strong { color: var(--accent); }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    padding: 0.75rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+  }
+  textarea { min-height: 100px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 1.2rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 0.75rem;
+  }
+  .btn:hover { background: rgba(240, 168, 60, 0.25); }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .result-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 60px;
+    white-space: pre-wrap;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  .loading-bar-container {
+    margin-top: 0.75rem;
+    display: none;
+  }
+  .loading-bar-container.visible { display: block; }
+  .loading-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .loading-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .loading-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  /* ── Sentiment-specific ── */
+  .sentiment-result {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .sentiment-chip {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .sentiment-chip.positive {
+    color: var(--green);
+    background: var(--green-dim);
+    border-color: var(--green);
+  }
+  .sentiment-chip.negative {
+    color: var(--red);
+    background: var(--red-dim);
+    border-color: var(--red);
+  }
+
+  /* ── Similarity ── */
+  .sim-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .sim-score {
+    display: inline-block;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--blue);
+    margin-right: 0.5rem;
+  }
+  .sim-bar {
+    display: inline-block;
+    height: 10px;
+    background: var(--blue);
+    border-radius: 5px;
+    transition: width 0.5s;
+    vertical-align: middle;
+  }
+
+  /* ── Zero-shot ── */
+  .zs-label-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+  .zs-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  .zs-label-name {
+    min-width: 120px;
+    font-size: 0.8rem;
+    text-align: right;
+    color: var(--text-muted);
+  }
+  .zs-bar-track {
+    flex: 1;
+    height: 20px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .zs-bar-fill {
+    height: 100%;
+    background: var(--purple);
+    border-radius: 4px;
+    transition: width 0.5s;
+  }
+  .zs-bar-pct {
+    min-width: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--purple);
+  }
+
+  /* ── Text gen ── */
+  .gen-output {
+    font-family: var(--serif);
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .gen-output .prompt-echo {
+    color: var(--text-muted);
+  }
+  .gen-output .generated {
+    color: var(--accent);
+  }
+  .gen-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .gen-controls label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .gen-controls input[type="range"] {
+    width: 120px;
+    accent-color: var(--accent);
+  }
+  .gen-controls .val {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1rem 2rem 2rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .header, .main, .tabs, .footer { padding-left: 1rem; padding-right: 1rem; }
+    .tabs { overflow-x: auto; }
+    .tab { white-space: nowrap; padding: 0.5rem 0.8rem; font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Local AI Lab</h1>
+  <div class="subtitle">
+    Transformers.js v4 — every model runs in your browser via WebGPU. No server. No API keys.
+    <br>Built with <a href="https://huggingface.co/docs/transformers.js" target="_blank">@huggingface/transformers</a>
+  </div>
+  <div class="runtime-badge">
+    <span class="dot" id="runtimeDot"></span>
+    <span id="runtimeLabel">Checking WebGPU…</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-panel="sentiment">Sentiment</button>
+  <button class="tab" data-panel="similarity">Similarity</button>
+  <button class="tab" data-panel="zeroshot">Zero-Shot</button>
+  <button class="tab" data-panel="generate">Generate</button>
+</div>
+
+<div class="main">
+
+  <!-- ═══════════════ SENTIMENT ═══════════════ -->
+  <div class="panel active" id="panel-sentiment">
+    <p class="explain">
+      Sentiment analysis classifies text as positive or negative. The model below
+      (<code>Xenova/distilbert-base-uncased-finetuned-sst-2-english</code>) runs
+      entirely in your browser — no data leaves your machine.
+    </p>
+    <div class="tech-note">
+      <strong>What's happening:</strong> The ONNX-exported DistilBERT model is loaded into
+      WebGPU memory. Your text is tokenized client-side, fed through the model, and
+      softmax scores are returned — all in JavaScript.
+    </div>
+    <textarea id="sentInput" placeholder="Type or paste text to analyze…">The new library update is incredibly fast and the documentation is excellent. I'm impressed by how easy it was to get started.</textarea>
+    <button class="btn" id="sentBtn" onclick="runSentiment()">▶ Analyze Sentiment</button>
+    <div class="loading-bar-container" id="sentLoading">
+      <div class="loading-label" id="sentLoadLabel">Loading model…</div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="sentLoadFill"></div></div>
+    </div>
+    <div class="sentiment-result" id="sentResult"></div>
+  </div>
+
+  <!-- ═══════════════ SIMILARITY ═══════════════ -->
+  <div class="panel" id="panel-similarity">
+    <p class="explain">
+      Semantic similarity uses embeddings to measure how close two texts are in meaning,
+      not just word overlap. The model (<code>Xenova/all-MiniLM-L6-v2</code>) encodes
+      each sentence into a 384-dimensional vector, then we compute cosine similarity.
+    </p>
+    <div class="tech-note">
+      <strong>What's happening:</strong> Each sentence is tokenized and passed through a
+      BERT-family model. The [CLS] token embedding is extracted, normalized, and the
+      dot product gives us a similarity score from 0 to 1.
+    </div>
+    <div class="sim-input-group">
+      <input type="text" id="simA" placeholder="Sentence A" value="The cat sat on the mat.">
+      <input type="text" id="simB" placeholder="Sentence B" value="A kitten was resting on the rug.">
+    </div>
+    <button class="btn" id="simBtn" onclick="runSimilarity()">▶ Compare</button>
+    <div class="loading-bar-container" id="simLoading">
+      <div class="loading-label" id="simLoadLabel">Loading model…</div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="simLoadFill"></div></div>
+    </div>
+    <div class="result-box" id="simResult" style="display:none;"></div>
+  </div>
+
+  <!-- ═══════════════ ZERO-SHOT ═══════════════ -->
+  <div class="panel" id="panel-zeroshot">
+    <p class="explain">
+      Zero-shot classification assigns labels to text without task-specific training.
+      You provide candidate labels and the model
+      (<code>Xenova/mobilebert-uncased-mnli</code>) scores each one using
+      natural language inference — deciding if the text "entails" each label.
+    </p>
+    <div class="tech-note">
+      <strong>What's happening:</strong> For each label, the model evaluates the hypothesis
+      "This text is about [label]" against your input as the premise. The entailment
+      scores are softmaxed into probabilities.
+    </div>
+    <textarea id="zsInput" placeholder="Text to classify…" style="min-height:70px;">The Federal Reserve held interest rates steady, signaling caution amid persistent inflation and slowing job growth.</textarea>
+    <input type="text" id="zsLabels" placeholder="Comma-separated labels" value="politics, economics, technology, sports, health" style="margin-top:0.5rem;">
+    <button class="btn" id="zsBtn" onclick="runZeroShot()">▶ Classify</button>
+    <div class="loading-bar-container" id="zsLoading">
+      <div class="loading-label" id="zsLoadLabel">Loading model…</div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="zsLoadFill"></div></div>
+    </div>
+    <div id="zsResult" style="margin-top:1rem;"></div>
+  </div>
+
+  <!-- ═══════════════ GENERATE ═══════════════ -->
+  <div class="panel" id="panel-generate">
+    <p class="explain">
+      Text generation with a small language model running locally. This uses
+      <code>onnx-community/Qwen3-0.6B-ONNX</code> — a 0.6B parameter model,
+      quantized to 4-bit, loaded entirely into your browser's WebGPU memory.
+    </p>
+    <div class="tech-note">
+      <strong>What's happening:</strong> The quantized model weights are fetched from
+      Hugging Face Hub, cached in browser storage, then inference runs on your GPU
+      via WebGPU. Token generation is autoregressive — each token is produced one
+      at a time. This is genuinely a language model running on your hardware.
+    </div>
+    <textarea id="genInput" placeholder="Enter a prompt…" style="min-height:70px;">Explain what a neural network is in one paragraph:</textarea>
+    <div class="gen-controls">
+      <label>
+        Max tokens: <span class="val" id="maxTokVal">128</span>
+        <input type="range" id="maxTok" min="32" max="256" value="128" oninput="document.getElementById('maxTokVal').textContent=this.value">
+      </label>
+      <label>
+        Temperature: <span class="val" id="tempVal">0.7</span>
+        <input type="range" id="temp" min="1" max="15" value="7" oninput="document.getElementById('tempVal').textContent=(this.value/10).toFixed(1)">
+      </label>
+      <button class="btn" id="genBtn" onclick="runGenerate()">▶ Generate</button>
+    </div>
+    <div class="loading-bar-container" id="genLoading">
+      <div class="loading-label" id="genLoadLabel">Loading model…</div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="genLoadFill"></div></div>
+    </div>
+    <div class="result-box gen-output" id="genResult" style="display:none;"></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  All inference runs locally in your browser via Transformers.js v4 + WebGPU + ONNX Runtime.
+  No data is sent to any server. Models are cached after first download.
+  <br>Source: <a href="https://huggingface.co/blog/transformersjs-v4" target="_blank" style="color:var(--accent);">Transformers.js v4 announcement</a>
+</div>
+
+<script type="module">
+  // ── Import Transformers.js v4 from CDN ──
+  import { pipeline, env, cos_sim } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4';
+
+  // Expose to global scope for onclick handlers
+  window._tfjs = { pipeline, env, cos_sim };
+
+  // ── Check WebGPU ──
+  const dot = document.getElementById('runtimeDot');
+  const label = document.getElementById('runtimeLabel');
+
+  if (navigator.gpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) {
+        dot.classList.add('active');
+        label.textContent = 'WebGPU available — models will use GPU acceleration';
+      } else {
+        label.textContent = 'WebGPU adapter not found — falling back to WASM';
+      }
+    } catch {
+      label.textContent = 'WebGPU error — falling back to WASM';
+    }
+  } else {
+    label.textContent = 'WebGPU not supported — using WASM backend (slower)';
+  }
+</script>
+
+<script>
+  // ── Tab switching ──
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  // ── Cached pipeline instances ──
+  const pipelines = {};
+
+  function showLoading(prefix, msg, pct) {
+    const container = document.getElementById(prefix + 'Loading');
+    const lbl = document.getElementById(prefix + 'LoadLabel');
+    const fill = document.getElementById(prefix + 'LoadFill');
+    container.classList.add('visible');
+    lbl.textContent = msg;
+    fill.style.width = pct + '%';
+  }
+  function hideLoading(prefix) {
+    document.getElementById(prefix + 'Loading').classList.remove('visible');
+  }
+
+  function progressCallback(prefix) {
+    return (progress) => {
+      if (progress.status === 'download') {
+        const pct = progress.progress ? Math.round(progress.progress) : 0;
+        showLoading(prefix, `Downloading ${progress.file || 'model'}… ${pct}%`, pct);
+      } else if (progress.status === 'loading') {
+        showLoading(prefix, 'Loading into memory…', 90);
+      } else if (progress.status === 'ready') {
+        showLoading(prefix, 'Ready!', 100);
+        setTimeout(() => hideLoading(prefix), 600);
+      }
+    };
+  }
+
+  // Determine device: use webgpu if available, else fall back
+  function getDevice() {
+    return navigator.gpu ? 'webgpu' : 'wasm';
+  }
+
+  // ═══════════════ SENTIMENT ═══════════════
+  window.runSentiment = async function() {
+    const btn = document.getElementById('sentBtn');
+    const input = document.getElementById('sentInput').value.trim();
+    const result = document.getElementById('sentResult');
+    if (!input) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Working…';
+    result.innerHTML = '';
+
+    try {
+      if (!pipelines.sentiment) {
+        pipelines.sentiment = await window._tfjs.pipeline(
+          'sentiment-analysis',
+          'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+          { progress_callback: progressCallback('sent'), device: getDevice() }
+        );
+      }
+      const out = await pipelines.sentiment(input);
+      result.innerHTML = out.map(o => {
+        const cls = o.label === 'POSITIVE' ? 'positive' : 'negative';
+        return `<span class="sentiment-chip ${cls}">${o.label} ${(o.score * 100).toFixed(1)}%</span>`;
+      }).join('');
+    } catch (e) {
+      result.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ Analyze Sentiment';
+    hideLoading('sent');
+  };
+
+  // ═══════════════ SIMILARITY ═══════════════
+  window.runSimilarity = async function() {
+    const btn = document.getElementById('simBtn');
+    const a = document.getElementById('simA').value.trim();
+    const b = document.getElementById('simB').value.trim();
+    const result = document.getElementById('simResult');
+    if (!a || !b) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Working…';
+    result.style.display = 'none';
+
+    try {
+      if (!pipelines.embedder) {
+        pipelines.embedder = await window._tfjs.pipeline(
+          'feature-extraction',
+          'Xenova/all-MiniLM-L6-v2',
+          { progress_callback: progressCallback('sim'), device: getDevice() }
+        );
+      }
+      const outA = await pipelines.embedder(a, { pooling: 'mean', normalize: true });
+      const outB = await pipelines.embedder(b, { pooling: 'mean', normalize: true });
+
+      const score = window._tfjs.cos_sim(outA.data, outB.data);
+      const pct = Math.max(0, Math.min(100, score * 100));
+
+      result.style.display = 'block';
+      result.innerHTML = `
+        <span class="sim-score">${score.toFixed(3)}</span>
+        <span class="sim-bar" style="width:${pct * 2.5}px;"></span>
+        <br><br>
+        <span style="color:var(--text-muted); font-size:0.8rem;">
+          ${score > 0.8 ? '→ Very similar in meaning' :
+            score > 0.5 ? '→ Moderately similar' :
+            score > 0.3 ? '→ Somewhat related' :
+            '→ Not very similar'}
+        </span>
+      `;
+    } catch (e) {
+      result.style.display = 'block';
+      result.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ Compare';
+    hideLoading('sim');
+  };
+
+  // ═══════════════ ZERO-SHOT ═══════════════
+  window.runZeroShot = async function() {
+    const btn = document.getElementById('zsBtn');
+    const input = document.getElementById('zsInput').value.trim();
+    const labelsRaw = document.getElementById('zsLabels').value.trim();
+    const result = document.getElementById('zsResult');
+    if (!input || !labelsRaw) return;
+
+    const labels = labelsRaw.split(',').map(s => s.trim()).filter(Boolean);
+    if (labels.length < 2) { result.innerHTML = '<span style="color:var(--red);">Need at least 2 labels</span>'; return; }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Working…';
+    result.innerHTML = '';
+
+    try {
+      if (!pipelines.zeroshot) {
+        pipelines.zeroshot = await window._tfjs.pipeline(
+          'zero-shot-classification',
+          'Xenova/mobilebert-uncased-mnli',
+          { progress_callback: progressCallback('zs'), device: getDevice() }
+        );
+      }
+      const out = await pipelines.zeroshot(input, labels);
+
+      result.innerHTML = out.labels.map((lbl, i) => {
+        const pct = (out.scores[i] * 100).toFixed(1);
+        return `
+          <div class="zs-bar-container">
+            <span class="zs-label-name">${lbl}</span>
+            <div class="zs-bar-track">
+              <div class="zs-bar-fill" style="width:${pct}%;"></div>
+            </div>
+            <span class="zs-bar-pct">${pct}%</span>
+          </div>
+        `;
+      }).join('');
+    } catch (e) {
+      result.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ Classify';
+    hideLoading('zs');
+  };
+
+  // ═══════════════ GENERATE ═══════════════
+  window.runGenerate = async function() {
+    const btn = document.getElementById('genBtn');
+    const input = document.getElementById('genInput').value.trim();
+    const result = document.getElementById('genResult');
+    const maxTok = parseInt(document.getElementById('maxTok').value);
+    const temp = parseInt(document.getElementById('temp').value) / 10;
+    if (!input) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Loading model…';
+    result.style.display = 'block';
+    result.innerHTML = '<span style="color:var(--text-muted);">Loading model (this may take a minute on first run)…</span>';
+
+    try {
+      if (!pipelines.generator) {
+        pipelines.generator = await window._tfjs.pipeline(
+          'text-generation',
+          'onnx-community/Qwen3-0.6B-ONNX',
+          {
+            progress_callback: progressCallback('gen'),
+            device: getDevice(),
+            dtype: 'q4f16',
+          }
+        );
+      }
+
+      btn.textContent = '⏳ Generating…';
+
+      const messages = [
+        { role: "user", content: input },
+      ];
+
+      const out = await pipelines.generator(messages, {
+        max_new_tokens: maxTok,
+        temperature: temp,
+        do_sample: temp > 0.01,
+      });
+
+      const generated = out[0].generated_text;
+      // generated_text is array of messages for chat models
+      const lastMsg = Array.isArray(generated) ? generated[generated.length - 1].content : generated;
+
+      result.innerHTML = `
+        <span class="prompt-echo">${escHtml(input)}</span>
+        <br><br>
+        <span class="generated">${escHtml(lastMsg)}</span>
+      `;
+    } catch (e) {
+      result.innerHTML = `<span style="color:var(--red);">Error: ${e.message}</span>`;
+      console.error(e);
+    }
+
+    btn.disabled = false;
+    btn.textContent = '▶ Generate';
+    hideLoading('gen');
+  };
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+</script>
+
+</body>
+</html>
